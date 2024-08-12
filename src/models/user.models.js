@@ -18,7 +18,7 @@ const userSchema = new Schema({
         lowercase:true,
         trim:true,
     },
-    fullname:{
+    fullName:{
         type:String,
         required:true,
         trim:true,
@@ -59,7 +59,7 @@ userSchema.pre("save",async function(next){
     // using isModified because the lower code will run again and again whenver user will make some changes in its model
     // so we should check if the password is modified or not 
     if(!this.isModified("password")) return next(); 
-    this.password = bcrypt.hash(this.password,10)
+    this.password = await bcrypt.hash(this.password,10)
     next();
 })
 
