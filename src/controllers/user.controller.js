@@ -33,7 +33,7 @@ const registerUser = asyncHandler ( async ( req , res ) => {
         throw new ApiError(400,"Please fill all the fields")
         }
         //3
-        const existedUser = User.findOne({ //mongoose to find email or that passowrd
+        const existedUser = await User.findOne({ //mongoose to find email or that passowrd
           $or:[{username},{email}]  
         })
 

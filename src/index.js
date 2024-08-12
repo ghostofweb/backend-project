@@ -7,7 +7,7 @@ import {app} from "./app.js";
 // here we are using ifi , direct function call cuz thats what we always have to do
 // also we are using ; becuase it indicates that we are using ifi and plus its a good approch
 dotenv.config({
-    path:'./env' // to set the path directly to the env file
+    path:'./.env' // to set the path directly to the env file
 })
 
 
