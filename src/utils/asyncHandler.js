@@ -1,11 +1,12 @@
 // TYPE 1 !!!!!!!!!!!!!!!!!!! promise catch throw 
 const asyncHandler = (requestHandler) => {
-    (req,res,next)=>{
+    return (req,res,next)=>{
         Promise.resolve(requestHandler(req,res,next)).
         catch((err)=> { next (err) } ) // if promise is not succeeded then!
     }
+    
 }
-
+export {asyncHandler};
 
 // TYPE 2!!!!!!!!!!!!!!!!!! async await method
 // async are the higher order function which can take function and return functions
@@ -25,5 +26,5 @@ const asyncHandler = (requestHandler) => {
 //     }
 // }
 
-export default asyncHandler
+
 

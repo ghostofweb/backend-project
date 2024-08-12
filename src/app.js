@@ -16,4 +16,15 @@ app.use(express.static("public"))
 
 app.use(cookieParser())
 
-export default {app} ;
+
+//routes importinh
+
+import userRouter from "./routes/user.routes.js"
+
+//routes declration
+app.use("/api/v1/users",userRouter) // passing control to the userRouter 
+
+
+// here the /users will be used as prefix
+// soo it will look like http://localhost:8000/api/v1/users/register the routed side
+export {app} ;

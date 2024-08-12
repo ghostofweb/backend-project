@@ -7,8 +7,8 @@ check if user is logged in or nah               (err,req,res,next)
 (to check in middlewere)    |  
                 [check if user is logged in]<-- this is middlewere
                 
-    */
-/* here we have 4 parameter(err,req,res,next)
+    
+here we have 4 parameter(err,req,res,next)
 next is used to pass down to next operation of middlewere as middlewere can be multiple */
 
 
