@@ -18,7 +18,7 @@ const registerUser = asyncHandler ( async ( req , res ) => {
 
     //1
     const {fullName,email,username,password} = req.body 
-    console.log("email", email)
+    console.log(req.body)
 
     //2 
     // if(fullName === ""){
@@ -27,7 +27,7 @@ const registerUser = asyncHandler ( async ( req , res ) => {
     // ADVANCE WAY TO CHECK EVERY FIELD
     // some(), it return the true value to the condition we give to each element of the array
     if(
-        [fullName,email.username,password].some((field) =>
+        [fullName,email,username,password].some((field) =>
          field?.trim() === ""))
         {
         throw new ApiError(400,"Please fill all the fields")
@@ -43,16 +43,25 @@ const registerUser = asyncHandler ( async ( req , res ) => {
         //4   // here we will use multer 
         // we are getting the localPath of both of it, but these we do get sometimes or we dont
         // soo thats why we using ? 
+
+   
        const avatarLocalPath =  req.files?.avatar[0]?.path;
-       const coverImagepath = req.files?.coverImage[0]?.path;
+    // const coverImagepath = req.files?.coverImage[0]?.path;
+       console.log(req.files);
+
+       let coverImagePath;
+        if(req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length > 0){
+            coverImagePath = req.files.coverImage[0].path
+        }
 
        if(!avatarLocalPath){
         throw new ApiError(400,"Avatar is required")
        }
+
        //5
        // here we are uploading the image to cloudinary
     const avatar = await uploadOnCloudinary(avatarLocalPath);
-    const coverImage = await uploadOnCloudinary(coverImagepath);
+    const coverImage = await uploadOnCloudinary(coverImagePath);
 
     if(!avatar){
         throw new ApiError(400,"Avatar upload failed")

@@ -24,6 +24,7 @@ const uploadOnCloudinary = async (localFilePath)=>{
         })
         //File has been uploaded to the cloudinary
         console.log("file is uploaded on cloudinary", response.url);
+        fs.unlinkSync(localFilePath) //unlink and delete the photos
         return response
         
     } catch (error) {
