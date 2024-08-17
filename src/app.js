@@ -1,6 +1,8 @@
 import express from "express"
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
+import dotenv from 'dotenv';
+
 //app.use() is mostly used for middleware configration
 const app = express();
 

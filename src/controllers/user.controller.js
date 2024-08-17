@@ -3,7 +3,7 @@ import { ApiError } from "../utils/ApiError.js"
 import { User } from "../models/user.models.js" 
 import { uploadOnCloudinary } from "../utils/cloudinary.js"
 import { response } from "express"
-import  ApiResponse from "../utils/ApiRespone.js"
+import  ApiResponse from "../utils/ApiResponse.js"
 // here we are making function to register the user
 const registerUser = asyncHandler ( async ( req , res ) => {
     // 1 get User detail from front-end
@@ -96,22 +96,33 @@ const registerUser = asyncHandler ( async ( req , res ) => {
 
 
 // making a method to generate refresh and access token
-const generateAccessAndRefreshTokens = async (userId)=>{
+const generateAccessAndRefreshTokens = async (userId) => {
     try {
-       const user = await User.findById(userId)
-       const accessToken = user.generateAccessToken() 
-       const refreshToken = user.generateRefreshToken()
+        const user = await User.findById(userId);
+        if (!user) {
+            console.error(`User with ID ${userId} not found`);
+            throw new ApiError(404, "User not found");
+        }
 
-       user.refreshToken =  refreshToken
-       await user.save({validateBeforeSave: false}) //no need to validate before saving
-       // here we made access refresh token and put that in user schema
+        console.log("User found:", user);
 
-       return {accessToken,refreshToken}
+        const accessToken = user.generateAccessToken();
+        const refreshToken = user.generateRefreshToken();
 
+        console.log("Generated Access Token:", accessToken);
+        console.log("Generated Refresh Token:", refreshToken);
+
+        user.refreshToken = refreshToken;
+        await user.save({ validateBeforeSave: false }); // we dont want to save things again
+        // we just want to update the refresh token 
+
+        return { accessToken, refreshToken };
     } catch (error) {
-        throw new ApiError(500,"Something went wrong while generating refresh and access token ")
+        console.error("Error generating tokens:", error.message, error.stack);
+        throw new ApiError(500, "Something went wrong while generating refresh and access token");
     }
-}
+};
+
 
 const loginUser = asyncHandler(async (req,res)=>{
     // 1 get username or email (can make user login from both) and password from the user
@@ -128,7 +139,9 @@ const loginUser = asyncHandler(async (req,res)=>{
         throw new ApiError(400,"username or email is required")
     }
 
-   const user = await User.findOne({$or:[{username,email}]})
+    const user = await User.findOne({ 
+        $or: [{ email: email }, { username: username }]
+    });
 
    if(!user){
     throw new ApiError(400,"username or email is incorrect")
@@ -142,7 +155,7 @@ const loginUser = asyncHandler(async (req,res)=>{
    // if all is good then generate access and refresh token and send them in cookies
    const {accessToken,refreshToken} = await generateAccessAndRefreshTokens(user._id)
 
-   const loggedInUser = await User.findOne(user._id).select("-password refreshToken") // here we are looking for the user which we 
+   const loggedInUser = await User.findById(user._id).select("-password -refreshToken"); // here we are looking for the user which we 
    //checked before , and taking its _id, to find it 
 
    //cookies options
