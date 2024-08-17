@@ -1,14 +1,14 @@
 // here we are using this as a middlewher for the logout, where we will get if the user is logged in
 //or not , 
 
-import { ApiError } from "../utils/ApiError";
-import { asyncHandler } from "../utils/asyncHandler";
+import { ApiError } from "../utils/ApiError.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
 import jwt from "jsonwebtoken"
-import { User } from "../models/user.models";
+import { User } from "../models/user.models.js";
 
 export const verifyJWT =  asyncHandler( async ( req , res , next )=>{
     try {
-        const token = req.cookies?.accessToken || req.header("Authorization").replace("Bearer","")
+        const token = req.cookies?.accessToken || req.header("Authorization")?.replace("Bearer ", "");
         // we take cookies from the loggedInUser to see if its our database or nah
     
         if(!token){
@@ -20,7 +20,7 @@ export const verifyJWT =  asyncHandler( async ( req , res , next )=>{
         // we are using the secret key to verify the token , this secret key is stored in the
         // environment variable , so we can't see it in the code , so its safe
     
-        const user = User.findById(decodedTokenInfo?._id).select("-password -refreshToken")
+        const user = await User.findById(decodedTokenInfo?._id).select("-password -refreshToken")
     
         if(!user){
             throw new ApiError(401,"Invalid Access Token")
