@@ -94,4 +94,97 @@ const registerUser = asyncHandler ( async ( req , res ) => {
     
 })
 
-export {registerUser};
+
+// making a method to generate refresh and access token
+const generateAccessAndRefreshTokens = async (userId)=>{
+    try {
+       const user = await User.findById(userId)
+       const accessToken = user.generateAccessToken() 
+       const refreshToken = user.generateRefreshToken()
+
+       user.refreshToken =  refreshToken
+       await user.save({validateBeforeSave: false}) //no need to validate before saving
+       // here we made access refresh token and put that in user schema
+
+       return {accessToken,refreshToken}
+
+    } catch (error) {
+        throw new ApiError(500,"Something went wrong while generating refresh and access token ")
+    }
+}
+
+const loginUser = asyncHandler(async (req,res)=>{
+    // 1 get username or email (can make user login from both) and password from the user
+    // 2 check if both of them are not empty
+    // 3 go to the databasea and check if we can find them or not
+    // 4 if not then give them error and tell them to go register
+    // 5 then check the password, if they dont match, then give them error
+    // 6 if its good then 
+    // make access and refresh tokens and 
+    // send them in cookies
+    
+    const {email,username,password} = req.body
+    if(!email || !username){
+        throw new ApiError(400,"username or email is required")
+    }
+
+   const user = await User.findOne({$or:[{username,email}]})
+
+   if(!user){
+    throw new ApiError(400,"username or email is incorrect")
+   }
+   //check if the password is correct or not
+   const isPasswordValid = await user.isPasswordCorrect(password)
+
+   if(!isPasswordValid){
+    throw new ApiError(401,"Invalid user credential")
+   }
+   // if all is good then generate access and refresh token and send them in cookies
+   const {accessToken,refreshToken} = await generateAccessAndRefreshTokens(user._id)
+
+   const loggedInUser = await User.findOne(user._id).select("-password refreshToken") // here we are looking for the user which we 
+   //checked before , and taking its _id, to find it 
+
+   //cookies options
+   const options = {
+    httpOnly: true, // making httponly true give access to the server only to change the cookie cuz cookies can be changed from the url
+    secure:true
+}
+    return res.status(200)
+    .cookie("accessToken",accessToken,options) //setting up cookies
+    .cookie("refreshToken",refreshToken,options) 
+    .json(
+        new ApiResponse(200,
+            {
+                user: loggedInUser,accessToken,refreshToken
+
+            },
+            "User logged in successfully"
+        )
+    )
+
+})
+const logoutUser = asyncHandler(async(req,res)=>{
+    // here we are removing the cookies from the user's browser
+   await User.findByIdAndUpdate(
+        req.user._id,
+        {
+            $set:{refreshToken:undefined}
+        },
+        {
+            new:true
+        }
+    )
+    const options = {
+        httpOnly: true, // making httponly true give access to the server only to change the cookie cuz cookies can be changed from the url
+        secure:true
+    }
+    return res
+    .status(200)
+    .clearCookie("accessToken",options)
+    .clearCookie("refreshToken",options)
+    .json(new ApiResponse(200,{},"User Logged Out"))
+})
+export {registerUser
+    ,loginUser,
+    logoutUser}
