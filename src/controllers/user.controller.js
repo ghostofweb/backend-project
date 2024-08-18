@@ -202,7 +202,7 @@ const logoutUser = asyncHandler(async(req,res)=>{
 
 const refreshAccessToken = asyncHandler(async(req,res) =>{
    const incomngRefreshToken =  req.cookies.refreshToken || req.body.refreshToken
-   
+
    if(!incomngRefreshToken) {
     throw new ApiError(401,"Unauthorized request")
    }
@@ -236,6 +236,26 @@ const refreshAccessToken = asyncHandler(async(req,res) =>{
         throw new ApiError(401, error?.message || "Invalid refresh token")
    }
 
+})
+
+const changeCurrentPassword = asyncHandler(async(req,res)=>{
+    const {oldPassword,newPassword} = req.body //taking old and new password
+    const user = await User.findById(req.user?._id)
+    //finding the user by getting the userId from auth
+    //logically if user can change the password then surely it is logged in
+    //so here we use the auth req.user where we got the user by taking cookie from the 
+    //user
+    const isPasswordCorrect = await user.isPasswordCorrect(oldPassword)
+
+    if (!isPasswordCorrect) {
+        throw new ApiError(400,"Invalid old password")
+    }
+
+    user.password = newPassword
+    //changing the password of the user
+    await user.save({validateBeforeSave:false}) //now save again 
+
+    return res.status(200).json(new ApiResponse(200,{},"password changed successfully"))
 })
 
 export {registerUser
