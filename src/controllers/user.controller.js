@@ -258,6 +258,94 @@ const changeCurrentPassword = asyncHandler(async(req,res)=>{
     return res.status(200).json(new ApiResponse(200,{},"password changed successfully"))
 })
 
-export {registerUser
-    ,loginUser,
-    logoutUser,refreshAccessToken}
+const getCurrentUser = asyncHandler(async (req,res) => {
+    return res
+    .status(200)
+    .json(200,req.user,"current user fetched successfully")
+})
+
+
+const updateAccountDetails = asyncHandler(async (req,res) => {
+    const {fullName,email} = req.user
+    //getting the user details from the auth req.user
+    if(!fullName || email){
+        throw new ApiError(400,"Please fill all the fields")
+    }
+    //checking if the fields are empty or not
+    //finding the user by getting the userId from auth
+    //logically if user can change the password then surely it is logged in
+    //so here we use the auth req.user where we got the user by taking cookie from the
+    //user
+    const user = await User.findByIdAndUpdate(req.user?._id,
+        {
+            $set:{
+                fullName:fullName,email:email
+            }
+        },{new:true}
+    ).select("-password")
+
+    return res.status(200).json(new ApiResponse(200,user,"Account details Updated Successfully"))
+})
+
+const updateUserAvatar = asyncHandler(async (req,res) => {
+    const avatarLocalPath = req.file?.path //multer middlewere
+    //getting the path of the uploaded file
+    if(!avatarLocalPath){
+        throw new ApiError(400,"Avatar file not found")
+    }
+
+    const avatar = await uploadOnCloudinary(avatarLocalPath)
+
+    if(!avatar.url){
+        throw new ApiError(400,"Avatar upload failed")
+    }
+
+    const user = await User.findByIdAndUpdate(
+        req.user?._id,
+        {
+            $set:{
+                avatar:avatar.url
+            } 
+        },{new:true}
+    ).select("-password")
+
+    return res.status(200).
+    json(new ApiResponse(200,user,"Avatar updated successfully"))
+})
+
+const updateUserCoverImage = asyncHandler(async (req,res) => {
+    const coverImageLocalPath = req.file?.path //multer middlewere
+    //getting the path of the uploaded file
+    if(!coverImageLocalPath){
+        throw new ApiError(400,"Cover Image file not found")
+    }
+
+    const cover = await uploadOnCloudinary(coverImageLocalPath)
+
+    if(!cover.url){
+        throw new ApiError(400,"Avatar upload failed")
+    }
+
+   const user =  await User.findByIdAndUpdate(
+        req.user?._id,
+        {
+            $set:{
+                coverImage:cover.url
+            } 
+        },{new:true}
+    ).select("-password")
+    return res.status(200).
+    json(new ApiResponse(200,user,"cover updated successfully"))
+})
+
+export {
+    registerUser,
+    loginUser,
+    logoutUser,
+    refreshAccessToken,
+    changeCurrentPassword,
+    getCurrentUser,
+    updateAccountDetails,
+    updateUserAvatar,
+    updateUserCoverImage
+}
