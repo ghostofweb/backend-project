@@ -261,7 +261,7 @@ const changeCurrentPassword = asyncHandler(async(req,res)=>{
 const getCurrentUser = asyncHandler(async (req,res) => {
     return res
     .status(200)
-    .json(200,req.user,"current user fetched successfully")
+    .json(new ApiResponse(200,req.user,"current user fetched successfully"))
 })
 
 
@@ -287,31 +287,62 @@ const updateAccountDetails = asyncHandler(async (req,res) => {
     return res.status(200).json(new ApiResponse(200,user,"Account details Updated Successfully"))
 })
 
-const updateUserAvatar = asyncHandler(async (req,res) => {
-    const avatarLocalPath = req.file?.path //multer middlewere
-    //getting the path of the uploaded file
-    if(!avatarLocalPath){
-        throw new ApiError(400,"Avatar file not found")
+const updateUserAvatar = asyncHandler(async(req, res) => {
+    const avatarLocalPath = req.file?.path;
+
+    if (!avatarLocalPath) {
+        throw new ApiError(400, "Avatar file is missing");
     }
 
-    const avatar = await uploadOnCloudinary(avatarLocalPath)
+    // Fetch the user to get the current avatar URL
+    const user = await User.findById(req.user?._id).select("avatar");
 
-    if(!avatar.url){
-        throw new ApiError(400,"Avatar upload failed")
+    // If the user has an existing avatar, delete it from Cloudinary
+    if (user.avatar) {
+        const publicId = getPublicIdFromUrl(user.avatar); // Extract public ID from URL
+        await deleteFromCloudinary(publicId); // Delete the avatar from Cloudinary
     }
 
-    const user = await User.findByIdAndUpdate(
+    // Upload the new avatar to Cloudinary
+    const avatar = await uploadOnCloudinary(avatarLocalPath);
+
+    if (!avatar.url) {
+        throw new ApiError(400, "Error while uploading avatar");
+    }
+
+    // Update the user document with the new avatar URL
+    const updatedUser = await User.findByIdAndUpdate(
         req.user?._id,
         {
-            $set:{
-                avatar:avatar.url
-            } 
-        },{new:true}
-    ).select("-password")
+            $set: {
+                avatar: avatar.url
+            }
+        },
+        {new: true}
+    ).select("-password");
 
-    return res.status(200).
-    json(new ApiResponse(200,user,"Avatar updated successfully"))
-})
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(200, updatedUser, "Avatar image updated successfully")
+        );
+});
+
+// Helper function to extract public ID from Cloudinary URL
+function getPublicIdFromUrl(url) {
+    const parts = url.split('/');
+    const fileName = parts[parts.length - 1];
+    return fileName.split('.')[0]; // Remove the file extension to get the public ID
+}
+
+// Helper function to delete a file from Cloudinary
+async function deleteFromCloudinary(publicId) {
+    const result = await cloudinary.v2.uploader.destroy(publicId);
+    if (result.result !== 'ok') {
+        throw new ApiError(400, "Failed to delete old avatar from Cloudinary");
+    }
+}
+
 
 const updateUserCoverImage = asyncHandler(async (req,res) => {
     const coverImageLocalPath = req.file?.path //multer middlewere
@@ -337,6 +368,7 @@ const updateUserCoverImage = asyncHandler(async (req,res) => {
     return res.status(200).
     json(new ApiResponse(200,user,"cover updated successfully"))
 })
+
 
 export {
     registerUser,
