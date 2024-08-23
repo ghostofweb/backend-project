@@ -48,3 +48,5 @@ we will fetch the channel name in the document document where we have SUBS => C
 Aggregation pipelines
 Aggregation pipelines are used to perform complex data processing and analysis on large datasets. They are used to aggregate data from multiple collections and perform operations such as grouping, sorting, and filtering.
 ( a pipeline of condition from which data flows and get filtered and comes out with the data filtered, which has been filtered through stages )
+
+
